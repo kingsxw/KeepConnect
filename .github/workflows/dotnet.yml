@@ -57,6 +57,7 @@ jobs:
         cd publish
         Get-ChildItem -Directory | ForEach-Object {
           $name = $_.Name
+          Write-Host $name
           7z a "../artifacts/${name}.zip" "$($_.FullName)\*"
         }
 
