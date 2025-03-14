@@ -53,7 +53,6 @@ jobs:
   
     - name: Zip Artifacts
       run: |
-        $version = (dotnet list package | Select-String '> (\d+\.\d+\.\d+)').Matches.Groups[1].Value
         cd publish
         Get-ChildItem -Directory | ForEach-Object {
           $arch = $_.Name
