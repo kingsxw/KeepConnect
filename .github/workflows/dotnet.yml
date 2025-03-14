@@ -38,9 +38,12 @@ jobs:
           -p:IncludeNativeLibrariesForSelfExtract=true `
           -o "./publish/${{ matrix.rid }}/${{ matrix.self_contained }}"
 
+    - name: Install 7-Zip
+      run: choco install 7zip -y
+  
     - name: Zip Artifacts
       run: |
-        $version = (Get-Content .\Directory.Build.props | Select-String '<Version>([\d.]+)</Version>').Matches.Groups[1].Value
+        $version = (dotnet list package | Select-String '> (\d+\.\d+\.\d+)').Matches.Groups[1].Value
         cd publish
         Get-ChildItem -Directory | ForEach-Object {
           $arch = $_.Name
