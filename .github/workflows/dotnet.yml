@@ -40,13 +40,14 @@ jobs:
 
     - name: Build & Publish
       run: |
+        $type = if (${{ matrix.self_contained }} -eq "true") { "self-contained" } else { "framework-dependent" }
         dotnet publish -c Release `
           -r "${{ matrix.rid }}" `
           --self-contained "${{ matrix.self_contained }}" `
           -p:PublishSingleFile=true `
           -p:IncludeNativeLibrariesForSelfExtract=true `
           -p:Version=${{ env.APP_VERSION }} `
-          -o "./publish/${{ matrix.rid }}/${{ matrix.self_contained }}"
+          -o "./publish/${{ matrix.rid }}-$type"
 
     - name: Install 7-Zip
       run: choco install 7zip -y
@@ -55,9 +56,8 @@ jobs:
       run: |
         cd publish
         Get-ChildItem -Directory | ForEach-Object {
-          $arch = $_.Name
-          $type = if ($_.GetDirectories().Name -eq "true") { "self-contained" } else { "framework-dependent" }
-          7z a "../artifacts/$arch-$type-${{ matrix.rid }}-v${{ env.APP_VERSION }}.zip" "$($_.FullName)\*"
+          $name = $_.Name
+          7z a "../artifacts/${name}.zip" "$($_.FullName)\*"
         }
 
     - name: Upload Artifacts
