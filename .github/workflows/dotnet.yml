@@ -12,33 +12,31 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest  # 需要 Windows 环境生成 exe
+    runs-on: windows-latest
     strategy:
       matrix:
         rid: [win-x86, win-x64]
         self_contained: [true, false]
-        exclude:  # 排除无效组合
+        exclude:
           - rid: win-x86
-            self_contained: false  # 依赖框架的32位通常不需要
+            self_contained: false
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
 
-    - name: Restore dependencies
-      run: dotnet restore
-
     - name: Build & Publish
       run: |
-        dotnet publish -c Release \
-          -r ${{ matrix.rid }} \
-          --self-contained=${{ matrix.self_contained }} \
-          -p:PublishSingleFile=true \
-          -p:IncludeNativeLibrariesForSelfExtract=true \
-          -o ./publish/${{ matrix.rid }}/${{ matrix.self_contained }}
+        dotnet publish -c Release `
+          -r "${{ matrix.rid }}" `
+          --self-contained "${{ matrix.self_contained }}" `
+          -p:PublishSingleFile=true `
+          -p:IncludeNativeLibrariesForSelfExtract=true `
+          -o "./publish/${{ matrix.rid }}/${{ matrix.self_contained }}"
 
     - name: Zip Artifacts
       run: |
@@ -47,7 +45,7 @@ jobs:
         Get-ChildItem -Directory | ForEach-Object {
           $arch = $_.Name
           $type = if ($_.GetDirectories().Name -eq "true") { "self-contained" } else { "framework-dependent" }
-          7z a "../artifacts/$arch-$type-v$version.zip" "$_/*"
+          7z a "../artifacts/$arch-$type-v$version.zip" "$($_.FullName)\*"
         }
 
     - name: Upload Artifacts
