@@ -35,7 +35,7 @@ jobs:
       run: |
         dotnet publish -c Release \
           -r ${{ matrix.rid }} \
-          --self-contained ${{ matrix.self_contained }} \
+          --self-contained=${{ matrix.self_contained }} \
           -p:PublishSingleFile=true \
           -p:IncludeNativeLibrariesForSelfExtract=true \
           -o ./publish/${{ matrix.rid }}/${{ matrix.self_contained }}
