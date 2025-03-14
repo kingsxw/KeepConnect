@@ -1,28 +1,87 @@
 # This workflow will build a .NET project
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
 
-name: .NET
+name: .NET CI
 
 on:
   push:
     branches: [ "main" ]
+    tags: [ "v*" ]
   pull_request:
     branches: [ "main" ]
 
 jobs:
   build:
-
-    runs-on: ubuntu-latest
-
+    runs-on: windows-latest  # 需要 Windows 环境生成 exe
+    strategy:
+      matrix:
+        rid: [win-x86, win-x64]
+        self_contained: [true, false]
+        exclude:  # 排除无效组合
+          - rid: win-x86
+            self_contained: false  # 依赖框架的32位通常不需要
     steps:
     - uses: actions/checkout@v4
+    
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
+
     - name: Restore dependencies
       run: dotnet restore
-    - name: Build
-      run: dotnet build --no-restore
-    - name: Test
-      run: dotnet test --no-build --verbosity normal
+
+    - name: Build & Publish
+      run: |
+        dotnet publish -c Release \
+          -r ${{ matrix.rid }} \
+          --self-contained ${{ matrix.self_contained }} \
+          -p:PublishSingleFile=true \
+          -p:IncludeNativeLibrariesForSelfExtract=true \
+          -o ./publish/${{ matrix.rid }}/${{ matrix.self_contained }}
+
+    - name: Zip Artifacts
+      run: |
+        $version = (Get-Content .\Directory.Build.props | Select-String '<Version>([\d.]+)</Version>').Matches.Groups[1].Value
+        cd publish
+        Get-ChildItem -Directory | ForEach-Object {
+          $arch = $_.Name
+          $type = if ($_.GetDirectories().Name -eq "true") { "self-contained" } else { "framework-dependent" }
+          7z a "../artifacts/$arch-$type-v$version.zip" "$_/*"
+        }
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-packages
+        path: ./artifacts/*.zip
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+    - name: Download Artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: release-packages
+        path: ./artifacts
+
+    - name: Create Release
+      id: create_release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ github.ref_name }}
+        name: Release ${{ github.ref_name }}
+        body: |
+          Multi-architecture build includes:
+          - Windows x86 (32-bit) Self-Contained
+          - Windows x64 (64-bit) Self-Contained
+          - Windows x64 Framework-Dependent
+        draft: false
+        prerelease: false
+        files: |
+          artifacts/*.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
