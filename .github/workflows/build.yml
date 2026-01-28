@@ -24,35 +24,68 @@ jobs:
         run: npm ci
       
       - name: Clean dist directory
-        run: |
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            Remove-Item -Path dist -Recurse -Force -ErrorAction SilentlyContinue
-          else
-            rm -rf dist || true
-          fi
-        shell: bash
+        run: rm -rf dist || true
       
-      - name: Build macOS ARM64
-        run: npm run build:mac:arm64
-        env:
-          CSC_LINK: ${{ secrets.CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+      - name: Check project structure
+        run: |
+          echo "Current directory:"
+          pwd
+          echo "Project structure:"
+          ls -la
+          echo "Checking for required files:"
+          ls -la main.js package.json index.html renderer.js || true
+      
+      - name: Build macOS ARM64 (Unsigned)
+        run: |
+          # 使用明确的配置构建
+          echo "Building macOS ARM64 without code signing..."
+          
+          # 创建临时配置文件，确保路径正确
+          cat > electron-builder-config.yml << EOF
+          appId: com.keepconnect.app
+          productName: KeepConnect
+          directories:
+            output: dist
+            app: .
+          files:
+            - "main.js"
+            - "index.html"
+            - "renderer.js"
+            - "icon-256x256.png"
+            - "icon-16x16.png"
+            - "icon-1024x1024.png"
+          mac:
+            category: public.app-category.utilities
+            icon: icon-1024x1024.png
+            target: 
+              - dmg
+            identity: null
+            hardenedRuntime: false
+            gatekeeperAssess: false
+          EOF
+          
+          # 使用配置文件和详细输出
+          npx electron-builder --mac --arm64 --config electron-builder-config.yml --verbose
+      
+      - name: Check build output
+        run: |
+          echo "Checking build output..."
+          find . -name "*.dmg" -type f | xargs -I {} echo "Found: {}"
+          
+          if [ -d "dist" ]; then
+            echo "Contents of dist directory:"
+            ls -la dist/
+            find dist -type f
+          fi
       
       - name: Upload macOS ARM64 artifact
         uses: actions/upload-artifact@v4
         with:
           name: KeepConnect-macOS-ARM64
-          path: dist/*.dmg
-      
-      - name: Release macOS ARM64
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v1
-        with:
-          files: dist/*.dmg
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          path: |
+            dist/*.dmg
+            dist/**/*.dmg
+          if-no-files-found: error
 
   build-mac-x64:
     name: Build macOS x64
@@ -71,35 +104,48 @@ jobs:
         run: npm ci
       
       - name: Clean dist directory
-        run: |
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            Remove-Item -Path dist -Recurse -Force -ErrorAction SilentlyContinue
-          else
-            rm -rf dist || true
-          fi
-        shell: bash
+        run: rm -rf dist || true
       
-      - name: Build macOS x64
-        run: npm run build:mac:x64
-        env:
-          CSC_LINK: ${{ secrets.CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+      - name: Build macOS x64 (Unsigned)
+        run: |
+          # 使用明确的配置构建
+          echo "Building macOS x64 without code signing..."
+          
+          # 创建临时配置文件，确保路径正确
+          cat > electron-builder-config.yml << EOF
+          appId: com.keepconnect.app
+          productName: KeepConnect
+          directories:
+            output: dist
+            app: .
+          files:
+            - "main.js"
+            - "index.html"
+            - "renderer.js"
+            - "icon-256x256.png"
+            - "icon-16x16.png"
+            - "icon-1024x1024.png"
+          mac:
+            category: public.app-category.utilities
+            icon: icon-1024x1024.png
+            target: 
+              - dmg
+            identity: null
+            hardenedRuntime: false
+            gatekeeperAssess: false
+          EOF
+          
+          # 使用配置文件和详细输出
+          npx electron-builder --mac --x64 --config electron-builder-config.yml --verbose
       
       - name: Upload macOS x64 artifact
         uses: actions/upload-artifact@v4
         with:
           name: KeepConnect-macOS-x64
-          path: dist/*.dmg
-      
-      - name: Release macOS x64
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v1
-        with:
-          files: dist/*.dmg
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          path: |
+            dist/*.dmg
+            dist/**/*.dmg
+          if-no-files-found: error
 
   build-win-x64:
     name: Build Windows x64
@@ -119,14 +165,13 @@ jobs:
       
       - name: Clean dist directory
         run: |
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            Remove-Item -Path dist -Recurse -Force -ErrorAction SilentlyContinue
-          else
-            rm -rf dist || true
+          # 修复：在 Windows 上使用正确的命令清理目录
+          if [ -d "dist" ]; then
+            rm -rf dist
           fi
         shell: bash
       
-      - name: Build Windows x64
+      - name: Build Windows x64 Portable
         run: npm run build:win:x64:portable
       
       - name: Upload Windows x64 artifact
@@ -134,16 +179,7 @@ jobs:
         with:
           name: KeepConnect-Windows-x64
           path: dist/*.exe
-      
-      - name: Release Windows x64
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v1
-        with:
-          files: dist/*.exe
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          if-no-files-found: error
 
   build-win-x86:
     name: Build Windows x86
@@ -154,7 +190,7 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v4git 
         with:
           node-version: '20'
       
@@ -163,14 +199,13 @@ jobs:
       
       - name: Clean dist directory
         run: |
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            Remove-Item -Path dist -Recurse -Force -ErrorAction SilentlyContinue
-          else
-            rm -rf dist || true
+          # 修复：在 Windows 上使用正确的命令清理目录
+          if [ -d "dist" ]; then
+            rm -rf dist
           fi
         shell: bash
       
-      - name: Build Windows x86
+      - name: Build Windows x86 Portable
         run: npm run build:win:x86:portable
       
       - name: Upload Windows x86 artifact
@@ -178,16 +213,7 @@ jobs:
         with:
           name: KeepConnect-Windows-x86
           path: dist/*.exe
-      
-      - name: Release Windows x86
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v1
-        with:
-          files: dist/*.exe
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          if-no-files-found: error
 
   build-linux-x64:
     name: Build Linux x64
@@ -206,32 +232,28 @@ jobs:
         run: npm ci
       
       - name: Clean dist directory
+        run: rm -rf dist || true
+      
+      - name: Install required packages for Linux build
         run: |
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            Remove-Item -Path dist -Recurse -Force -ErrorAction SilentlyContinue
-          else
-            rm -rf dist || true
-          fi
-        shell: bash
+          sudo apt-get update
+          sudo apt-get install -y fakeroot rpm
       
       - name: Build Linux x64
         run: npm run build:linux:x64
+        env:
+          # 修复：添加 GH_TOKEN 环境变量
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Upload Linux x64 artifact
         uses: actions/upload-artifact@v4
         with:
           name: KeepConnect-Linux-x64
-          path: dist/*
-      
-      - name: Release Linux x64
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v1
-        with:
-          files: dist/*
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          path: |
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.rpm
+          if-no-files-found: error
 
   build-linux-ia32:
     name: Build Linux x86
@@ -250,32 +272,28 @@ jobs:
         run: npm ci
       
       - name: Clean dist directory
+        run: rm -rf dist || true
+      
+      - name: Install required packages for Linux build
         run: |
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            Remove-Item -Path dist -Recurse -Force -ErrorAction SilentlyContinue
-          else
-            rm -rf dist || true
-          fi
-        shell: bash
+          sudo apt-get update
+          sudo apt-get install -y fakeroot rpm
       
       - name: Build Linux x86
         run: npm run build:linux:ia32
+        env:
+          # 修复：添加 GH_TOKEN 环境变量
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Upload Linux x86 artifact
         uses: actions/upload-artifact@v4
         with:
           name: KeepConnect-Linux-x86
-          path: dist/*
-      
-      - name: Release Linux x86
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v1
-        with:
-          files: dist/*
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          path: |
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.rpm
+          if-no-files-found: error
 
   build-linux-arm64:
     name: Build Linux ARM64
@@ -294,32 +312,28 @@ jobs:
         run: npm ci
       
       - name: Clean dist directory
+        run: rm -rf dist || true
+      
+      - name: Install required packages for Linux build
         run: |
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            Remove-Item -Path dist -Recurse -Force -ErrorAction SilentlyContinue
-          else
-            rm -rf dist || true
-          fi
-        shell: bash
+          sudo apt-get update
+          sudo apt-get install -y fakeroot rpm
       
       - name: Build Linux ARM64
         run: npm run build:linux:arm64
+        env:
+          # 修复：添加 GH_TOKEN 环境变量
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Upload Linux ARM64 artifact
         uses: actions/upload-artifact@v4
         with:
           name: KeepConnect-Linux-ARM64
-          path: dist/*
-      
-      - name: Release Linux ARM64
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v1
-        with:
-          files: dist/*
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          path: |
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.rpm
+          if-no-files-found: error
 
   build-linux-armv7l:
     name: Build Linux ARMv7
@@ -338,29 +352,125 @@ jobs:
         run: npm ci
       
       - name: Clean dist directory
+        run: rm -rf dist || true
+      
+      - name: Install required packages for Linux build
         run: |
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            Remove-Item -Path dist -Recurse -Force -ErrorAction SilentlyContinue
-          else
-            rm -rf dist || true
-          fi
-        shell: bash
+          sudo apt-get update
+          sudo apt-get install -y fakeroot rpm
       
       - name: Build Linux ARMv7
         run: npm run build:linux:armv7l
+        env:
+          # 修复：添加 GH_TOKEN 环境变量
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Upload Linux ARMv7 artifact
         uses: actions/upload-artifact@v4
         with:
           name: KeepConnect-Linux-ARMv7
-          path: dist/*
+          path: |
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.rpm
+          if-no-files-found: error
+
+  create-release:
+    name: Create Release
+    needs: 
+      - build-mac-arm64
+      - build-mac-x64
+      - build-win-x64
+      - build-win-x86
+      - build-linux-x64
+      - build-linux-ia32
+      - build-linux-arm64
+      - build-linux-armv7l
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
       
-      - name: Release Linux ARMv7
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Prepare release files
+        run: |
+          echo "Preparing release files..."
+          mkdir -p release_files
+          
+          # 复制所有文件到release_files目录
+          find artifacts -type f \( -name "*.dmg" -o -name "*.exe" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" \) -exec cp {} release_files/ \;
+          
+          # 重命名文件以便识别
+          cd release_files
+          for file in *; do
+            if [[ "$file" == *"mac-arm64"* ]]; then
+              mv "$file" "KeepConnect-macOS-ARM64.dmg"
+            elif [[ "$file" == *"mac-x64"* ]]; then
+              mv "$file" "KeepConnect-macOS-x64.dmg"
+            elif [[ "$file" == *"win-x64"* ]]; then
+              mv "$file" "KeepConnect-Windows-x64.exe"
+            elif [[ "$file" == *"win-x86"* ]]; then
+              mv "$file" "KeepConnect-Windows-x86.exe"
+            elif [[ "$file" == *"linux-x64"* && "$file" == *".AppImage" ]]; then
+              mv "$file" "KeepConnect-Linux-x64.AppImage"
+            elif [[ "$file" == *"linux-x86"* && "$file" == *".AppImage" ]]; then
+              mv "$file" "KeepConnect-Linux-x86.AppImage"
+            elif [[ "$file" == *"linux-arm64"* && "$file" == *".AppImage" ]]; then
+              mv "$file" "KeepConnect-Linux-ARM64.AppImage"
+            elif [[ "$file" == *"linux-armv7"* && "$file" == *".AppImage" ]]; then
+              mv "$file" "KeepConnect-Linux-ARMv7.AppImage"
+            elif [[ "$file" == *"linux-x64"* && "$file" == *".deb" ]]; then
+              mv "$file" "KeepConnect-Linux-x64.deb"
+            elif [[ "$file" == *"linux-x64"* && "$file" == *".rpm" ]]; then
+              mv "$file" "KeepConnect-Linux-x64.rpm"
+            fi
+          done
+          
+          echo "Files to be released:"
+          ls -la
+      
+      - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: dist/*
+          name: Release ${{ github.ref_name }}
+          body: |
+            ## Release ${{ github.ref_name }}
+            
+            ### Important Notes
+            - **macOS builds are unsigned**: You may need to right-click and select "Open" to bypass Gatekeeper security
+            - **Windows builds are portable executables**: No installation required
+            - **Linux AppImages**: Make executable with `chmod +x filename.AppImage`
+            
+            ### Downloads
+            
+            **macOS:**
+            - [KeepConnect-macOS-ARM64.dmg](KeepConnect-macOS-ARM64.dmg) - Apple Silicon (M1/M2/M3)
+            - [KeepConnect-macOS-x64.dmg](KeepConnect-macOS-x64.dmg) - Intel Mac
+            
+            **Windows:**
+            - [KeepConnect-Windows-x64.exe](KeepConnect-Windows-x64.exe) - 64-bit Portable
+            - [KeepConnect-Windows-x86.exe](KeepConnect-Windows-x86.exe) - 32-bit Portable
+            
+            **Linux:**
+            - [KeepConnect-Linux-x64.AppImage](KeepConnect-Linux-x64.AppImage) - 64-bit AppImage
+            - [KeepConnect-Linux-x86.AppImage](KeepConnect-Linux-x86.AppImage) - 32-bit AppImage
+            - [KeepConnect-Linux-ARM64.AppImage](KeepConnect-Linux-ARM64.AppImage) - ARM64 AppImage
+            - [KeepConnect-Linux-ARMv7.AppImage](KeepConnect-Linux-ARMv7.AppImage) - ARMv7 AppImage
+            - [KeepConnect-Linux-x64.deb](KeepConnect-Linux-x64.deb) - Debian/Ubuntu 64-bit
+            - [KeepConnect-Linux-x64.rpm](KeepConnect-Linux-x64.rpm) - Fedora/RHEL 64-bit
+            
+            ### Installation Instructions
+            1. **macOS**: Download the .dmg file, open it, and drag the app to Applications folder
+            2. **Windows**: Download the .exe file and run directly (portable)
+            3. **Linux**: Download the AppImage, make executable (`chmod +x filename.AppImage`), and run
+            
+            ### Support
+            If you encounter any issues, please check the [GitHub repository](https://github.com/${{ github.repository }}) for documentation and support.
           draft: false
           prerelease: false
+          files: release_files/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
