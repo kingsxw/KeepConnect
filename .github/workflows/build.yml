@@ -64,8 +64,8 @@ jobs:
             gatekeeperAssess: false
           EOF
           
-          # 使用配置文件和详细输出
-          npx electron-builder --mac --arm64 --config electron-builder-config.yml --verbose
+          # 使用配置文件构建
+          npx electron-builder --mac --arm64 --config electron-builder-config.yml
       
       - name: Check build output
         run: |
@@ -135,8 +135,8 @@ jobs:
             gatekeeperAssess: false
           EOF
           
-          # 使用配置文件和详细输出
-          npx electron-builder --mac --x64 --config electron-builder-config.yml --verbose
+          # 使用配置文件构建
+          npx electron-builder --mac --x64 --config electron-builder-config.yml
       
       - name: Upload macOS x64 artifact
         uses: actions/upload-artifact@v4
