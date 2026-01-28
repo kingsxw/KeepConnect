@@ -25,7 +25,10 @@
     "easyconnect",
     "sangfor"
   ],
-  "author": "",
+  "author": {
+    "name": "kingsxw",
+    "email": "kingsxw@example.com"
+  },
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {

@@ -24,7 +24,13 @@ jobs:
         run: npm ci
       
       - name: Clean dist directory
-        run: rm -rf dist || true
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            Remove-Item -Path dist -Recurse -Force -ErrorAction SilentlyContinue
+          else
+            rm -rf dist || true
+          fi
+        shell: bash
       
       - name: Build macOS ARM64
         run: npm run build:mac:arm64
