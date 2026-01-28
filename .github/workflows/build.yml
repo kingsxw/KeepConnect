@@ -23,6 +23,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
+      - name: Clean dist directory
+        run: rm -rf dist || true
+      
       - name: Build macOS ARM64
         run: npm run build:mac:arm64
         env:
@@ -60,6 +63,9 @@ jobs:
       
       - name: Install dependencies
         run: npm ci
+      
+      - name: Clean dist directory
+        run: rm -rf dist || true
       
       - name: Build macOS x64
         run: npm run build:mac:x64
@@ -99,6 +105,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
+      - name: Clean dist directory
+        run: rm -rf dist || true
+      
       - name: Build Windows x64
         run: npm run build:win:x64:portable
       
@@ -133,6 +142,9 @@ jobs:
       
       - name: Install dependencies
         run: npm ci
+      
+      - name: Clean dist directory
+        run: rm -rf dist || true
       
       - name: Build Windows x86
         run: npm run build:win:x86:portable
@@ -169,6 +181,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
+      - name: Clean dist directory
+        run: rm -rf dist || true
+      
       - name: Build Linux x64
         run: npm run build:linux:x64
       
@@ -203,6 +218,9 @@ jobs:
       
       - name: Install dependencies
         run: npm ci
+      
+      - name: Clean dist directory
+        run: rm -rf dist || true
       
       - name: Build Linux x86
         run: npm run build:linux:ia32
@@ -239,6 +257,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
+      - name: Clean dist directory
+        run: rm -rf dist || true
+      
       - name: Build Linux ARM64
         run: npm run build:linux:arm64
       
@@ -273,6 +294,9 @@ jobs:
       
       - name: Install dependencies
         run: npm ci
+      
+      - name: Clean dist directory
+        run: rm -rf dist || true
       
       - name: Build Linux ARMv7
         run: npm run build:linux:armv7l
