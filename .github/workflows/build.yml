@@ -71,7 +71,13 @@ jobs:
         run: npm ci
       
       - name: Clean dist directory
-        run: rm -rf dist || true
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            Remove-Item -Path dist -Recurse -Force -ErrorAction SilentlyContinue
+          else
+            rm -rf dist || true
+          fi
+        shell: bash
       
       - name: Build macOS x64
         run: npm run build:mac:x64
@@ -112,7 +118,13 @@ jobs:
         run: npm ci
       
       - name: Clean dist directory
-        run: rm -rf dist || true
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            Remove-Item -Path dist -Recurse -Force -ErrorAction SilentlyContinue
+          else
+            rm -rf dist || true
+          fi
+        shell: bash
       
       - name: Build Windows x64
         run: npm run build:win:x64:portable
@@ -150,7 +162,13 @@ jobs:
         run: npm ci
       
       - name: Clean dist directory
-        run: rm -rf dist || true
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            Remove-Item -Path dist -Recurse -Force -ErrorAction SilentlyContinue
+          else
+            rm -rf dist || true
+          fi
+        shell: bash
       
       - name: Build Windows x86
         run: npm run build:win:x86:portable
@@ -188,7 +206,13 @@ jobs:
         run: npm ci
       
       - name: Clean dist directory
-        run: rm -rf dist || true
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            Remove-Item -Path dist -Recurse -Force -ErrorAction SilentlyContinue
+          else
+            rm -rf dist || true
+          fi
+        shell: bash
       
       - name: Build Linux x64
         run: npm run build:linux:x64
@@ -226,7 +250,13 @@ jobs:
         run: npm ci
       
       - name: Clean dist directory
-        run: rm -rf dist || true
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            Remove-Item -Path dist -Recurse -Force -ErrorAction SilentlyContinue
+          else
+            rm -rf dist || true
+          fi
+        shell: bash
       
       - name: Build Linux x86
         run: npm run build:linux:ia32
@@ -264,7 +294,13 @@ jobs:
         run: npm ci
       
       - name: Clean dist directory
-        run: rm -rf dist || true
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            Remove-Item -Path dist -Recurse -Force -ErrorAction SilentlyContinue
+          else
+            rm -rf dist || true
+          fi
+        shell: bash
       
       - name: Build Linux ARM64
         run: npm run build:linux:arm64
@@ -302,7 +338,13 @@ jobs:
         run: npm ci
       
       - name: Clean dist directory
-        run: rm -rf dist || true
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            Remove-Item -Path dist -Recurse -Force -ErrorAction SilentlyContinue
+          else
+            rm -rf dist || true
+          fi
+        shell: bash
       
       - name: Build Linux ARMv7
         run: npm run build:linux:armv7l

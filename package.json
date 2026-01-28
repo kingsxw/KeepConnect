@@ -40,7 +40,8 @@
     "appId": "com.keepconnect.app",
     "productName": "KeepConnect",
     "directories": {
-      "output": "dist"
+      "output": "dist",
+      "app": "."
     },
     "mac": {
       "category": "public.app-category.utilities",
