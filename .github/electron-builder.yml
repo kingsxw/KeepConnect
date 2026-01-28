@@ -1,0 +1,25 @@
+- name: Create temporary electron-builder config
+  run: |
+    cat > electron-builder.yml << EOF
+    appId: com.keepconnect.app
+    productName: KeepConnect
+    directories:
+      output: dist
+      app: .
+    files:
+      - main.js
+      - index.html
+      - renderer.js
+      - icon-256x256.png
+      - icon-16x16.png
+      - icon-1024x1024.png
+    mac:
+      category: public.app-category.utilities
+      icon: icon-1024x1024.png
+      target: dmg
+      identity: null
+    EOF
+    cat electron-builder.yml
+
+- name: Build macOS ARM64 (Unsigned)
+  run: npx electron-builder --mac --arm64 --config electron-builder.yml --verbose
