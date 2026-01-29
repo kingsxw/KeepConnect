@@ -12,11 +12,10 @@
     "build:win": "electron-builder --win",
     "build:win:x64": "electron-builder --win --x64",
     "build:win:x86": "electron-builder --win --ia32",
-    "build:win:x64:portable": "electron-builder --win --x64 --target portable",
-    "build:win:x86:portable": "electron-builder --win --ia32 --target portable",
+    "build:win:x64:portable": "electron-builder --win portable --x64",
+    "build:win:x86:portable": "electron-builder --win portable --ia32",
     "build:linux": "electron-builder --linux",
     "build:linux:x64": "electron-builder --linux --x64",
-    "build:linux:ia32": "electron-builder --linux --ia32",
     "build:linux:arm64": "electron-builder --linux --arm64",
     "build:linux:armv7l": "electron-builder --linux --armv7l"
   },
@@ -27,7 +26,7 @@
   ],
   "author": {
     "name": "kingsxw",
-    "email": "kingsxw@example.com"
+    "email": "kingsxw@163.com"
   },
   "license": "ISC",
   "type": "commonjs",
